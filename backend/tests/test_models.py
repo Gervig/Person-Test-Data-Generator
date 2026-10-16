@@ -3,6 +3,8 @@ from pydantic import ValidationError
 
 from app.models import *
 
+#TODO placeholder tests
+
 @pytest.mark.parametrize(
     "number",
     ["1", "43", "43B", "999Z"],
