@@ -2,6 +2,8 @@ from datetime import date
 
 from pydantic import BaseModel, field_validator
 
+#TODO placeholder validation functions
+
 class PostalCode(BaseModel):
     postal_code: str
     town_name: str
