@@ -21,5 +21,6 @@ def test_valid_postal_code(postal_code, town_name):
     ],
 )
 def test_invalid_postal_code(postal_code, town_name):
-    PostalCode(postal_code=postal_code, town_name=town_name)
+    with pytest.raises(ValidationError):
+        PostalCode(postal_code=postal_code, town_name=town_name)
   
