@@ -3,6 +3,8 @@ from pydantic import ValidationError
 
 from app.models import PostalCode
 
+#TODO: add data from addresses.sql in data folder
+
 # Positive tests
 @pytest.mark.parametrize(
     "postal_code, town_name",

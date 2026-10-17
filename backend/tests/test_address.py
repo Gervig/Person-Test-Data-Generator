@@ -4,6 +4,7 @@ from pydantic import ValidationError
 from app.models import Address
 
 #TODO: add valid Postal Code with fixture
+#TODO: add data from addresses.sql in data folder
 
 # Positive tests
 @pytest.mark.parametrize(
