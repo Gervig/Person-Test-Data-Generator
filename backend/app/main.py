@@ -1,6 +1,27 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Query
 
-from app.database import get_connection
+from app.controllers.address_controller import get_address
+from app.controllers.person_controller import (
+    generate_cpr,
+    generate_cpr_and_name,
+    generate_cpr_name_and_birth_date,
+    generate_mobile_phone_number,
+    generate_name,
+    generate_name_and_birth_date,
+    generate_person,
+    generate_persons,
+)
+from app.controllers.postal_code_controller import list_postal_codes
+from app.views.address_view import AddressView
+from app.views.person_view import (
+    BulkPersonView,
+    CprAndNameView,
+    CprNameAndBirthDateView,
+    CprView,
+    NameAndBirthDateView,
+    NameView,
+    PersonView,
+)
 
 app = FastAPI(title="Personal Test Data Generator API")
 
@@ -12,31 +33,51 @@ def home():
 
 @app.get("/postal-codes")
 def get_postal_codes():
-    connection = None
-    cursor = None
+    return list_postal_codes()
 
-    try:
-        connection = get_connection()
-        cursor = connection.cursor()
-        cursor.execute(
-            "SELECT cPostalCode, cTownName FROM postal_code ORDER BY cPostalCode"
-        )
 
-        rows = cursor.fetchall()
+@app.get("/cpr", response_model=CprView)
+def get_cpr():
+    return generate_cpr()
 
-        return [
-            {"postal_code": postal_code, "town": town}
-            for postal_code, town in rows
-        ]
 
-    except Exception as exc:
-        raise HTTPException(
-            status_code=500,
-            detail="Could not retrieve postal codes from the database.",
-        ) from exc
+@app.get("/name", response_model=NameView)
+def get_name():
+    return generate_name()
 
-    finally:
-        if cursor is not None:
-            cursor.close()
-        if connection is not None:
-            connection.close()
+
+@app.get("/name-and-birth-date", response_model=NameAndBirthDateView)
+def get_name_and_birth_date():
+    return generate_name_and_birth_date()
+
+
+@app.get("/cpr-and-name", response_model=CprAndNameView)
+def get_cpr_and_name():
+    return generate_cpr_and_name()
+
+
+@app.get("/cpr-name-and-birth-date", response_model=CprNameAndBirthDateView)
+def get_cpr_name_and_birth_date():
+    return generate_cpr_name_and_birth_date()
+
+
+@app.get("/address", response_model=AddressView)
+def get_address_endpoint():
+    return get_address()
+
+
+@app.get("/mobile-phone-number")
+def get_mobile_phone_number():
+    return {"mobile_phone_number": generate_mobile_phone_number()}
+
+
+@app.get("/person", response_model=PersonView)
+def get_person():
+    return generate_person()
+
+
+@app.get("/persons", response_model=BulkPersonView)
+def get_persons(
+    count: int = Query(default=2, ge=2, le=100),
+):
+    return BulkPersonView(persons=generate_persons(count))

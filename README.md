@@ -94,6 +94,23 @@ The backend must provide **one function or method and one corresponding API endp
    - Mobile phone number
 9. Return fake person information in bulk, generating all information for **2 to 100 persons**.
 
+### API endpoints
+
+The backend exposes the required functionality through these `GET` endpoints:
+
+| Endpoint | Response |
+|---|---|
+| `/cpr` | A fake CPR number |
+| `/name` | First name, last name, and gender |
+| `/name-and-birth-date` | Name and gender plus date of birth |
+| `/cpr-and-name` | CPR number, name, and gender |
+| `/cpr-name-and-birth-date` | CPR number, name, gender, and date of birth |
+| `/address` | A fake address |
+| `/mobile-phone-number` | A fake Danish mobile phone number |
+| `/person` | All information for one fake person |
+| `/persons?count=2` through `/persons?count=100` | The requested number of complete fake persons |
+| `/postal-codes` | Postal codes loaded from the address database |
+
 ### 2.7. Implementation Choices
 
 The group may choose:
