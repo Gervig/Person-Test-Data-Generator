@@ -1,5 +1,5 @@
 from pydantic import BaseModel, field_validator
-from postal_code import PostalCode
+from app.models.postal_code import PostalCode
 
 class Address(BaseModel):
     street: str

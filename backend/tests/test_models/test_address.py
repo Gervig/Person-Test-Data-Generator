@@ -1,10 +1,9 @@
 import pytest
 from pydantic import ValidationError
 
-from app.models import Address
+from app.models.address import Address
 
-#TODO: add valid Postal Code with fixture
-#TODO: add data from addresses.sql in data folder
+#TODO: setup partitions
 
 # Positive tests
 @pytest.mark.parametrize(
@@ -13,8 +12,8 @@ from app.models import Address
         ("Guldbergsgade", "29", "1", "e48"),
     ],
 )
-def test_valid_address(street, number, floor, door):
-    Address(street=street, number=number, floor=floor, door=door)
+def test_valid_address(street, number, floor, door, valid_postal_code): # valid_postal_code from fixture in tests/conftest.py
+    Address(street=street, number=number, floor=floor, door=door, postal_code=valid_postal_code)
     
 # Negative tests
 @pytest.mark.parametrize(
@@ -23,7 +22,7 @@ def test_valid_address(street, number, floor, door):
         (1234, "hejsa", "#!", "wlc"),
     ],
 )
-def test_valid_address(street, number, floor, door):
+def test_invalid_address(street, number, floor, door, valid_postal_code): # valid_postal_code from fixture in tests/conftest.py
     with pytest.raises(ValidationError):
-        Address(street=street, number=number, floor=floor, door=door)
+        Address(street=street, number=number, floor=floor, door=door, postal_code=valid_postal_code)
 

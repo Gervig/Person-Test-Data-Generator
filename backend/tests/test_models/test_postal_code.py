@@ -1,15 +1,15 @@
 import pytest
 from pydantic import ValidationError
 
-from app.models import PostalCode
+from app.models.postal_code import PostalCode
 
-#TODO: add data from addresses.sql in data folder
+#TODO: setup partitions
 
 # Positive tests
 @pytest.mark.parametrize(
     "postal_code, town_name",
     [
-        (1234, "hejsa"),
+        ("1234", "hejsa"),
     ],
 )
 def test_valid_postal_code(postal_code, town_name):
@@ -19,7 +19,7 @@ def test_valid_postal_code(postal_code, town_name):
 @pytest.mark.parametrize(
     "postal_code, town_name",
     [
-        ("hejsa", 1234),
+        (1234, "hejsa"), # rejects postal_code as integer
     ],
 )
 def test_invalid_postal_code(postal_code, town_name):

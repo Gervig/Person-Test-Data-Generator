@@ -1,7 +1,7 @@
 from pydantic import BaseModel, field_validator
 
 class PostalCode(BaseModel):
-    postal_code: str
+    postal_code: str # stored as string to preserve leading zeros
     town_name: str
 
     @field_validator("postal_code")
