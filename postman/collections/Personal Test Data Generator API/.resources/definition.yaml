@@ -1,0 +1,27 @@
+$kind: collection
+variables:
+  base_url: ""
+scripts:
+  - type: http:afterResponse
+    code: "pm.test(\"Status code is 200\", () => {\r
+
+      \    pm.expect(pm.response.code).to.equal(200);\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Response is valid JSON\", () => {\r
+
+      \    pm.response.json();\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Response time is under 1000 ms\", () => {\r
+
+      \    pm.expect(pm.response.responseTime).to.be.below(1000);\r
+
+      });\r\n"
+    language: text/javascript
