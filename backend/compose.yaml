@@ -6,7 +6,7 @@ services:
     restart: "no"
     environment:
       MARIADB_ROOT_PASSWORD: local_dev_password
-      MARIADB_DATABASE: test_data
+      MARIADB_DATABASE: addresses
     ports:
       - "3306:3306"
     volumes:

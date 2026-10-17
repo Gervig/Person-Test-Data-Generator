@@ -20,7 +20,6 @@ SET time_zone = "+00:00";
 --
 -- Database: `addresses`
 --
-USE `test_data`;
 USE `addresses`;
 
 DELIMITER $$

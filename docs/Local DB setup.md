@@ -39,7 +39,7 @@ services:
     restart: "no"
     environment:
       MARIADB_ROOT_PASSWORD: local_dev_password
-      MARIADB_DATABASE: test_data
+      MARIADB_DATABASE: addresses
     ports:
       - "3306:3306"
     volumes:
@@ -54,7 +54,7 @@ volumes:
 - **Image:** MariaDB 11
 - **Container name:** `test-data-mariadb`
 - **Port:** `3306`
-- **Initial database:** `test_data`
+- **Initial database:** `addresses`
 - **Persistent storage:** `mariadb_data`
 - **Restart policy:** `no`, so Docker does not automatically restart the container
 
@@ -96,7 +96,7 @@ The named Docker volume preserves the database contents when the container is st
 
 The provided `addresses.sql` file is a phpMyAdmin dump containing MariaDB-specific statements, including database selection and a stored procedure.
 
-The original dump selects a database named `addresses`. To keep the imported table in the intended `test_data` database, the dump was edited before import.
+The original dump selects a database named `addresses`. To keep the imported table in the intended `addresses` database, the dump was edited before import.
 
 In `data/addresses.sql`, replace these statements:
 
@@ -111,7 +111,7 @@ USE `addresses`;
 with:
 
 ```sql
-USE `test_data`;
+USE `addresses`;
 ```
 
 Keep the remaining table definitions, stored procedure statements, and insert data intact.
@@ -133,7 +133,7 @@ If the SQL file is edited again, copy it into the container again before importi
 Open the MariaDB client inside the running container:
 
 ```powershell
-docker exec -it test-data-mariadb mariadb -uroot -plocal_dev_password test_data
+docker exec -it test-data-mariadb mariadb -uroot -plocal_dev_password addresses
 ```
 
 At the MariaDB prompt, execute the dump:
@@ -190,7 +190,7 @@ The query should return postal codes and their corresponding town names.
    | Port | `3306` |
    | User | `root` |
    | Password | `local_dev_password` |
-   | Database | `test_data` |
+   | Database | `addresses` |
 
 4. Download the MariaDB driver if DataGrip prompts you.
 5. Click **Test Connection** and confirm that it succeeds.
@@ -198,8 +198,6 @@ The query should return postal codes and their corresponding town names.
 7. Refresh the connection and enable the relevant database/schema if it is not visible.
 
 To inspect the data, expand the database, open **Tables**, and select `postal_code`. Use **View Data** or **Jump to Data** to open the table in a grid.
-
-If the dump created the table in `addresses` instead of `test_data`, select `addresses` in DataGrip or correct the dump and import it into the intended database.
 
 ## 9. Notes for team members
 
