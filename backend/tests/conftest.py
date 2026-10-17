@@ -1,7 +1,9 @@
 import pytest
+from datetime import date
 
 from app.models.postal_code import PostalCode
 from app.models.address import Address
+from app.models.person import Person
 
 
 @pytest.fixture
@@ -19,4 +21,16 @@ def valid_address(valid_postal_code):
         floor="1",
         door="e48",
         postal_code=valid_postal_code,
+    )
+
+@pytest.fixture
+def valid_person(valid_address):
+    return Person(
+        first_name="John",
+        last_name="Doe",
+        gender="male",
+        date_of_birth=date(1990, 1, 17),
+        cpr="1701901234",
+        mobile_phone_number="42102030",
+        address=valid_address,
     )

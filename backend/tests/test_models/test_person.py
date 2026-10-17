@@ -4,17 +4,15 @@ from datetime import date
 
 from app.models.person import Person
 
-#TODO: add valid Postal Code and Address from fixture
+#TODO: test each input in its own test function with parametrized partitions
 
 # Positive tests
-@pytest.mark.parametrize(
-    "first_name, last_name, gender, date_of_birth, cpr, mobile_phone_number",
-    [
-        ("john", "doe", "male", date(2026, 10, 17), "1710263075", "42102030")
-    ],
-)
-def test_valid_person(first_name, last_name, gender, date_of_birth, cpr, mobile_phone_number, valid_address): # valid_address from fixture in tests/conftest.py
-    Person(first_name=first_name, last_name=last_name, gender=gender, date_of_birth=date_of_birth, cpr=cpr, mobile_phone_number=mobile_phone_number, address=valid_address)
+
+# Test valid_person fixture works
+def test_valid_person(valid_person): # valid_person from fixture in tests/conftest.py
+    assert isinstance(valid_person, Person)
+    assert valid_person.first_name == "John"
+    assert valid_person.gender == "male"
 
 
 # Negative tests

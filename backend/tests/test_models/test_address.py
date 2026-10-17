@@ -3,17 +3,15 @@ from pydantic import ValidationError
 
 from app.models.address import Address
 
-#TODO: setup partitions
+#TODO: test each input in its own test function with parametrized partitions
 
 # Positive tests
-@pytest.mark.parametrize(
-    "street, number, floor, door",
-    [
-        ("Guldbergsgade", "29", "1", "e48"),
-    ],
-)
-def test_valid_address(street, number, floor, door, valid_postal_code): # valid_postal_code from fixture in tests/conftest.py
-    Address(street=street, number=number, floor=floor, door=door, postal_code=valid_postal_code)
+
+# Test address fixture works
+def test_valid_address(valid_address): # valid_address from fixture in tests/confest.py
+    assert isinstance(valid_address, Address)
+    assert valid_address.street == "Guldbergsgade"
+    assert valid_address.number == "29"
     
 # Negative tests
 @pytest.mark.parametrize(
