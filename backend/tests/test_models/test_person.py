@@ -24,10 +24,9 @@ def test_valid_person(valid_person): # valid_person from fixture in tests/confte
     ],
 )
 def test_valid_person_gender(valid_person_data, gender):# valid_person_data from fixture in tests/conftest.py
-    person_data = valid_person_data.copy()
-    person_data["gender"] = gender
+    valid_person_data["gender"] = gender
 
-    Person(**person_data) # Python unpacking operator ** passes dictionary inputs from fixture
+    Person(**valid_person_data) # Python unpacking operator ** passes dictionary inputs from fixture
 
 # Negative tests
 @pytest.mark.parametrize(
