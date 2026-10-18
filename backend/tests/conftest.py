@@ -42,7 +42,8 @@ def valid_person(valid_address):
         mobile_phone_number="42102030",
         address=valid_address,
     )
-    
+
+# returns a dictionary of valid person data for testing purposes
 @pytest.fixture
 def valid_person_data(valid_person):
     return valid_person.model_dump()
