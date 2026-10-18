@@ -10,7 +10,7 @@ from app.models.person import Person
 def valid_postal_code():
     return PostalCode(
         postal_code="2200",
-        town_name="København N",
+        town="København N",
     )
     
 @pytest.fixture

@@ -1,7 +1,6 @@
 from random import Random
 
 from app import generators
-from app.dtos.address_dto import AddressDTO
 from app.models.address import Address
 from app.repositories import postal_code_repository
 
@@ -16,6 +15,5 @@ def create_address(rng: Random | None = None) -> Address:
     )
 
 
-def generate_address(rng: Random | None = None) -> AddressDTO:
-    address = create_address(rng)
-    return AddressDTO.model_validate(address, from_attributes=True)
+def generate_address(rng: Random | None = None) -> Address:
+    return create_address(rng)

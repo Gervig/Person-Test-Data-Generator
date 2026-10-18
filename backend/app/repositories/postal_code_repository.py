@@ -15,7 +15,7 @@ def get_all() -> list[PostalCode]:
             "SELECT cPostalCode, cTownName FROM postal_code ORDER BY cPostalCode"
         )
         return [
-            PostalCode(postal_code=postal_code.strip(), town_name=town_name)
+            PostalCode(postal_code=postal_code.strip(), town=town_name)
             for postal_code, town_name in cursor.fetchall()
         ]
     except mariadb.Error as exc:
@@ -41,7 +41,7 @@ def get_random() -> PostalCode:
         if row is None:
             raise PostalCodeUnavailableError("No postal codes are available.")
         postal_code, town_name = row
-        return PostalCode(postal_code=postal_code.strip(), town_name=town_name)
+        return PostalCode(postal_code=postal_code.strip(), town=town_name)
     except mariadb.Error as exc:
         raise DatabaseError("Could not retrieve postal codes from the database.") from exc
     finally:

@@ -11,16 +11,16 @@ from app.models.postal_code import PostalCode
 def test_valid_postal_code(valid_postal_code):
     assert isinstance(valid_postal_code, PostalCode)
     assert valid_postal_code.postal_code == "2200"
-    assert valid_postal_code.town_name == "København N"
+    assert valid_postal_code.town == "København N"
  
 # Negative tests   
 @pytest.mark.parametrize(
-    "postal_code, town_name",
+    "postal_code, town",
     [
         (1234, "hejsa"), # rejects postal_code as integer
     ],
 )
-def test_invalid_postal_code(postal_code, town_name):
+def test_invalid_postal_code(postal_code, town):
     with pytest.raises(ValidationError):
-        PostalCode(postal_code=postal_code, town_name=town_name)
+        PostalCode(postal_code=postal_code, town=town)
   

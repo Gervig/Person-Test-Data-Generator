@@ -1,8 +1,8 @@
-from pydantic import BaseModel, field_validator
+from pydantic import AliasChoices, BaseModel, Field, field_validator
 
 class PostalCode(BaseModel):
-    postal_code: str # stored as string to preserve leading zeros
-    town_name: str
+    postal_code: str
+    town: str = Field(validation_alias=AliasChoices("town", "town_name"))
 
     @field_validator("postal_code")
     @classmethod
@@ -10,4 +10,3 @@ class PostalCode(BaseModel):
         if len(value) != 4 or not value.isdigit():
             raise ValueError("Postal code must be exactly 4 digits")
         return value
-    

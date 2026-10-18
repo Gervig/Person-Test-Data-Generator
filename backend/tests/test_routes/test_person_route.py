@@ -1,7 +1,7 @@
 from fastapi.testclient import TestClient
 
-from app.dtos.person_dto import BulkPersonDTO
 from app.main import app
+from app.models.person import PersonList
 from app.routes import person
 
 
@@ -12,7 +12,7 @@ def test_persons_count_bounds(monkeypatch) -> None:
     monkeypatch.setattr(
         person,
         "generate_persons",
-        lambda count: BulkPersonDTO(persons=[]),
+        lambda count: PersonList(persons=[]),
     )
 
     assert client.get("/persons?count=0").status_code == 422

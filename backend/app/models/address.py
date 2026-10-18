@@ -1,4 +1,5 @@
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_serializer, field_validator
+
 from app.models.postal_code import PostalCode
 
 class Address(BaseModel):
@@ -7,6 +8,13 @@ class Address(BaseModel):
     floor: str
     door: str
     postal_code: PostalCode
+
+    @field_serializer("postal_code")
+    def serialize_postal_code(self, value: PostalCode) -> dict[str, str]:
+        return {
+            "postal_code": value.postal_code,
+            "town_name": value.town,
+        }
 
     @field_validator("number")
     @classmethod

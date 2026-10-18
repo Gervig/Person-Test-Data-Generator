@@ -1,6 +1,6 @@
-from app.dtos.address_dto import AddressDTO
+from app.models.address import Address
 from app.services.address_service import generate_address
 
 
-def get_address() -> AddressDTO:
+def get_address() -> Address:
     return generate_address()

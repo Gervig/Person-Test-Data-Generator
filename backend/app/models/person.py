@@ -1,5 +1,6 @@
-from pydantic import BaseModel, ValidationInfo, field_validator, model_validator
 from datetime import date
+
+from pydantic import BaseModel, field_validator, model_validator
 
 from app.models.address import Address
 
@@ -14,21 +15,25 @@ ALLOWED_PHONE_PREFIXES = (
     "826", "827", "829"
 )
 
-class Person(BaseModel):
+class Name(BaseModel):
     first_name: str
     last_name: str
-    gender: str # male, female
-    date_of_birth: date # ddMMyy
-    cpr: str # 10 digits, first 6 from date_of_birth: ddMMyy - xxxx
-    mobile_phone_number: str # 8 digits long
-    address: Address
-    
+    gender: str
+
     @field_validator("gender")
     @classmethod
-    def validate_gender(cls, value:str) -> str:
+    def validate_gender(cls, value: str) -> str:
         if (value != "male" and value != "female"):
             raise ValueError("Gender must be male or female")
         return value
+
+
+class NameAndBirthDate(Name):
+    date_of_birth: date
+
+
+class Cpr(BaseModel):
+    cpr: str
 
     @field_validator("cpr")
     @classmethod
@@ -36,17 +41,28 @@ class Person(BaseModel):
         if len(value) != 10 or not value.isdigit():
             raise ValueError("CPR number must be exactly 10 digits")
         return value
-    
+
+
+class CprAndName(Name, Cpr):
+    pass
+
+
+class CprNameAndBirthDate(NameAndBirthDate, Cpr):
+    pass
+
+
+class Person(NameAndBirthDate, Cpr):
+    mobile_phone_number: str
+    address: Address
+
     @model_validator(mode="after")
     def validate_cpr_date_of_birth(self):
         date_of_birth = self.date_of_birth
-        # python date format YYYY-MM-DD to danish ddMMyy
         expected_date = (
-            f"{date_of_birth.day:02d}" #02d for preserving leading zeros
+            f"{date_of_birth.day:02d}"
             f"{date_of_birth.month:02d}"
-            f"{date_of_birth.year % 100:02d}" # get last 2 digits and preserve leading zeros
+            f"{date_of_birth.year % 100:02d}"
         )
-        # slice cpr from start to position 6 and compare to expected date
         if self.cpr[:6] != expected_date:
             raise ValueError("CPR date of birth mismatch")
 
@@ -60,4 +76,7 @@ class Person(BaseModel):
         if not value.startswith(ALLOWED_PHONE_PREFIXES):
             raise ValueError("Mobile phone number has an invalid prefix")
         return value
-    
+
+
+class PersonList(BaseModel):
+    persons: list[Person]
