@@ -32,7 +32,7 @@ class Person(BaseModel):
 
     @field_validator("cpr")
     @classmethod
-    def validate_cpr_format(cls, value: str, info: ValidationInfo) -> str:
+    def validate_cpr_format(cls, value: str) -> str:
         if len(value) != 10 or not value.isdigit():
             raise ValueError("CPR number must be exactly 10 digits")
         return value

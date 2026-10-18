@@ -31,6 +31,8 @@ def valid_address(valid_postal_code):
 def valid_address_data(valid_address):
     return valid_address.model_dump()
 
+
+#TODO: do we need both object and dictionary?
 @pytest.fixture
 def valid_person(valid_address):
     return Person(

@@ -23,19 +23,36 @@ def test_valid_person(valid_person): # valid_person from fixture in tests/confte
         "female"
     ],
 )
-def test_valid_person_gender(valid_person_data, gender):# valid_person_data from fixture in tests/conftest.py
+def test_valid_person_gender(valid_person_data, gender): # valid_person_data from fixture in tests/conftest.py
     valid_person_data["gender"] = gender
 
     Person(**valid_person_data) # Python unpacking operator ** passes dictionary inputs from fixture
 
-# Negative tests
+# Test CPR format, length 10 and numeric
 @pytest.mark.parametrize(
-    "first_name, last_name, gender, date_of_birth, cpr, mobile_phone_number",
+    "cpr",
     [
-        (1234, 5678, "tomato", "50-30-2030", "171000-3075", "45102030")
+        "1212124321",
+        "0102034567",
     ],
 )
-def test_invalid_person(first_name, last_name, gender, date_of_birth, cpr, mobile_phone_number, valid_address): # valid_address from fixture in tests/conftest.py
-    with pytest.raises(ValidationError):
-        Person(first_name=first_name, last_name=last_name, gender=gender, date_of_birth=date_of_birth, cpr=cpr, mobile_phone_number=mobile_phone_number, address=valid_address)
+def test_valid_cpr_format(cpr):
+    # call the specific class method validation
+    # cpr has 2 validation methods, test one thing at a time
+    assert Person.validate_cpr_format(cpr) == cpr
 
+# Negative tests
+
+# Invalid CPR format
+@pytest.mark.parametrize(
+    "cpr",
+    [
+        "12345",          # Too short
+        "12345678901",    # Too long
+        "abcdefghij",     # Not digits
+        "12345abcde",     # Contains letters
+    ],
+)
+def test_invalid_cpr_format(cpr):
+    with pytest.raises(ValueError, match="CPR number must be exactly 10 digits"):
+        Person.validate_cpr_format(cpr)
