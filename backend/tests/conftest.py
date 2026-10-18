@@ -14,6 +14,10 @@ def valid_postal_code():
     )
     
 @pytest.fixture
+def valid_postal_code_data(valid_postal_code):
+    return valid_postal_code.model_dump()
+    
+@pytest.fixture
 def valid_address(valid_postal_code):
     return Address(
         street="Guldbergsgade",
@@ -22,6 +26,10 @@ def valid_address(valid_postal_code):
         door="e48",
         postal_code=valid_postal_code,
     )
+    
+@pytest.fixture
+def valid_address_data(valid_address):
+    return valid_address.model_dump()
 
 @pytest.fixture
 def valid_person(valid_address):
@@ -34,3 +42,7 @@ def valid_person(valid_address):
         mobile_phone_number="42102030",
         address=valid_address,
     )
+    
+@pytest.fixture
+def valid_person_data(valid_person):
+    return valid_person.model_dump()
