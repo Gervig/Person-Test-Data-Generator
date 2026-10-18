@@ -15,6 +15,7 @@ def test_persons_count_bounds(monkeypatch) -> None:
         lambda count: PersonList(persons=[]),
     )
 
-    assert client.get("/persons?count=0").status_code == 422
+    assert client.get("/persons?count=1").status_code == 422
     assert client.get("/persons?count=101").status_code == 422
+    assert client.get("/persons?count=2").status_code == 200
     assert client.get("/persons?count=100").status_code == 200

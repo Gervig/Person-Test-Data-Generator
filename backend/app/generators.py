@@ -64,8 +64,10 @@ def random_floor(rng: Random | None = None) -> str:
 
 def random_door(rng: Random | None = None) -> str:
     generator = rng or random
+    letter = generator.choice(string.ascii_lowercase)
+    number = generator.randint(1, 999)
     return generator.choice(
         ["th", "mf", "tv"]
         + [str(number) for number in range(1, 51)]
-        + [f"{generator.choice(string.ascii_lowercase)}{generator.randint(1, 999)}"]
+        + [f"{letter}{number}", f"{letter}-{number}"]
     )

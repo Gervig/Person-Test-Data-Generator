@@ -59,5 +59,5 @@ def get_person():
 
 
 @router.get("/persons", response_model=PersonList)
-def get_persons(count: int = Query(default=2, ge=1, le=100)):
+def get_persons(count: int = Query(default=2, ge=2, le=100)):
     return generate_persons(count)

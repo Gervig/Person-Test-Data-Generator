@@ -24,3 +24,27 @@ def test_invalid_address(street, number, floor, door, valid_postal_code): # vali
     with pytest.raises(ValidationError):
         Address(street=street, number=number, floor=floor, door=door, postal_code=valid_postal_code)
 
+
+@pytest.mark.parametrize("door", ["c3", "d-14"])
+def test_valid_letter_doors(door, valid_postal_code):
+    address = Address(
+        street="Guldbergsgade",
+        number="29",
+        floor="1",
+        door=door,
+        postal_code=valid_postal_code,
+    )
+
+    assert address.door == door
+
+
+@pytest.mark.parametrize("door", ["c-", "C3", "c1234"])
+def test_invalid_letter_doors(door, valid_postal_code):
+    with pytest.raises(ValidationError):
+        Address(
+            street="Guldbergsgade",
+            number="29",
+            floor="1",
+            door=door,
+            postal_code=valid_postal_code,
+        )
