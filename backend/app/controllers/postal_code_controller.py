@@ -1,30 +1,9 @@
-from fastapi import HTTPException
-
-from app.database import get_connection
-from app.views.postal_code_view import PostalCodeView
+from app.dtos.postal_code_dto import PostalCodeDTO
+from app.repositories import postal_code_repository
 
 
-def list_postal_codes() -> list[PostalCodeView]:
-    connection = None
-    cursor = None
-
-    try:
-        connection = get_connection()
-        cursor = connection.cursor()
-        cursor.execute(
-            "SELECT cPostalCode, cTownName FROM postal_code ORDER BY cPostalCode"
-        )
-        return [
-            PostalCodeView(postal_code=postal_code.strip(), town=town)
-            for postal_code, town in cursor.fetchall()
-        ]
-    except Exception as exc:
-        raise HTTPException(
-            status_code=500,
-            detail="Could not retrieve postal codes from the database.",
-        ) from exc
-    finally:
-        if cursor is not None:
-            cursor.close()
-        if connection is not None:
-            connection.close()
+def list_postal_codes() -> list[PostalCodeDTO]:
+    return [
+        PostalCodeDTO(postal_code=postal_code.postal_code, town=postal_code.town_name)
+        for postal_code in postal_code_repository.get_all()
+    ]

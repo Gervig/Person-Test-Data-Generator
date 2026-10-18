@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
 
-class PostalCodeView(BaseModel):
+class PostalCodeDTO(BaseModel):
     postal_code: str
     town: str

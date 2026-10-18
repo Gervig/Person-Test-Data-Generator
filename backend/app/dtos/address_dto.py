@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from app.models.postal_code import PostalCode
 
 
-class AddressView(BaseModel):
+class AddressDTO(BaseModel):
     street: str
     number: str
     floor: str
