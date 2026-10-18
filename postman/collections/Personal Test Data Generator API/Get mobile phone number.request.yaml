@@ -1,0 +1,4 @@
+$kind: http-request
+url: "{{base_url}}/mobile-phone-number"
+method: GET
+order: 9000

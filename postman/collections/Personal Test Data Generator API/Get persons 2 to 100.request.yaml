@@ -1,0 +1,73 @@
+$kind: http-request
+url: "{{base_url}}/persons?count=2"
+method: GET
+queryParams:
+  - key: count
+    value: "2"
+    disabled: false
+    description: Number of persons returned
+scripts:
+  - type: afterResponse
+    code: "const baseUrl = pm.variables.get(\"baseUrl\") || \"http://localhost:8000\";\r
+
+      \r
+
+      const cases = [\r
+
+      \    { count: \"1\",   status: 422 },\r
+
+      \    { count: \"2\",   status: 200, length: 2 },\r
+
+      \    { count: \"3\",   status: 200, length: 3 },\r
+
+      \    { count: \"99\",  status: 200, length: 99 },\r
+
+      \    { count: \"100\", status: 200, length: 100 },\r
+
+      \    { count: \"101\", status: 422 },\r
+
+      \    { count: \"0\",   status: 422 },\r
+
+      \    { count: \"-1\",  status: 422 },\r
+
+      \    { count: \"abc\", status: 422 },\r
+
+      \    { count: \"\",    status: 422 },\r
+
+      ];\r
+
+      \r
+
+      cases.forEach(c => {\r
+
+      \    pm.sendRequest(`${baseUrl}/persons?count=${c.count}`, (err, res) => {\r
+
+      \        pm.test(`count=\"${c.count}\" returns ${c.status}`, () => {\r
+
+      \            pm.expect(err).to.be.null;\r
+
+      \            pm.expect(res.code).to.equal(c.status);\r
+
+      \            if (c.length) {\r
+
+      \                const persons = res.json().persons;\r
+
+      \                pm.expect(persons).to.have.lengthOf(c.length);\r
+
+      \                pm.expect(persons[0]).to.have.all.keys(\r
+
+      \                    \"first_name\", \"last_name\", \"gender\", \"date_of_birth\",\r
+
+      \                    \"cpr\", \"mobile_phone_number\", \"address\"\r
+
+      \                );\r
+
+      \            }\r
+
+      \        });\r
+
+      \    });\r
+
+      });"
+    language: text/javascript
+order: 10195

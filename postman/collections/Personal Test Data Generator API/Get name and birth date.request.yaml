@@ -1,0 +1,4 @@
+$kind: http-request
+url: "{{base_url}}/name-and-birth-date"
+method: GET
+order: 5000
