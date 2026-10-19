@@ -59,20 +59,43 @@ if (Test-Command "python") {
     Stop-Setup "Python was not found on PATH. Install Python 3.13.x, reopen PowerShell, and run this script again."
 }
 
-# Check uv, including its common Windows install location
-Write-Step "Checking uv"
-if (-not (Test-Command "uv")) {
-    $UvExe = Join-Path $HOME ".local\bin\uv.exe"
-    if (Test-Path $UvExe -PathType Leaf) {
-        Write-Host "Found uv at $UvExe. Adding its folder to this PowerShell session."
-        $env:Path = "$(Split-Path -Parent $UvExe);$env:Path"
-    } else {
-        Stop-Setup "uv was not found. Install it using https://docs.astral.sh/uv/getting-started/installation/ and reopen PowerShell."
+# Check and install uv if necessary
+$uvInstallDir = Join-Path $HOME ".local\bin"
+$uvExe = Join-Path $uvInstallDir "uv.exe"
+
+# Check whether uv is already available
+$uvCommand = Get-Command uv -ErrorAction SilentlyContinue
+
+if (-not $uvCommand -and -not (Test-Path $uvExe)) {
+    Write-Host "uv not found. Installing uv..."
+
+    & powershell.exe -NoProfile -ExecutionPolicy Bypass -Command `
+        "irm https://astral.sh/uv/install.ps1 | iex"
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "uv installation failed."
     }
 }
-uv --version
-if ($LASTEXITCODE -ne 0) {
-    Stop-Setup "uv did not run successfully."
+
+# Make the standard uv installation directory available
+# for the rest of this PowerShell session.
+if (Test-Path $uvExe) {
+    if (($env:Path -split ';') -notcontains $uvInstallDir) {
+        $env:Path = "$uvInstallDir;$env:Path"
+    }
+}
+
+# Verify uv
+$uvCommand = Get-Command uv -ErrorAction SilentlyContinue
+
+if ($uvCommand) {
+    uv --version
+}
+elseif (Test-Path $uvExe) {
+    & $uvExe --version
+}
+else {
+    throw "uv was not found after installation. Restart PowerShell and try again."
 }
 
 # Check Docker
