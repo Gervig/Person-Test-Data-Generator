@@ -2,7 +2,7 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app.models.person import PersonList
-from app.routes import person
+from app.routers import person
 
 
 client = TestClient(app)

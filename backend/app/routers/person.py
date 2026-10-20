@@ -58,6 +58,6 @@ def get_person():
     return generate_person()
 
 
-@router.get("/persons", response_model=PersonList)
+@router.get("/persons", response_model=PersonList, summary="Get 2 to 100 persons")
 def get_persons(count: int = Query(default=2, ge=2, le=100)):
     return generate_persons(count)
