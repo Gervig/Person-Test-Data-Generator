@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from app.exceptions import DatabaseError, PostalCodeUnavailableError
-from app.routes import address, health, person, postal_codes
+from app.routers import address, health, person, postal_codes
 
 app = FastAPI(title="Personal Test Data Generator API")
 
