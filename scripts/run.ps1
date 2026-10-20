@@ -50,7 +50,9 @@ if (-not (Test-Path $envFile -PathType Leaf)) {
     Write-Warning "backend\.env was not found. If the API needs local database settings, create this file before continuing."
 }
 
-Write-Host "Starting the API from backend..." -ForegroundColor Cyan
+Write-Host "Starting the API from backend..." -ForegroundColor DarkGray
+Write-Host "Swagger UI: " -ForegroundColor DarkGray -NoNewline
+Write-Host "http://127.0.0.1:8000/docs" -ForegroundColor Cyan
 Write-Host "Stop the server with Ctrl+C.`n" -ForegroundColor DarkGray
 
 # uv run uses the backend project's .venv and ensures the environment is up to date.
