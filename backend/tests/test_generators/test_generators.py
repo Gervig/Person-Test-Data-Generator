@@ -11,7 +11,7 @@ from app.generators import (
     random_phone_number,
     random_street,
 )
-from app.models.person import ALLOWED_PHONE_PREFIXES
+from app.models.phone_prefixes import ALLOWED_PHONE_PREFIXES
 
 
 def test_seeded_generators_are_repeatable() -> None:
