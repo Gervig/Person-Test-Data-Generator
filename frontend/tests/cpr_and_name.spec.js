@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-test("generate a random person", async ({ page }) => {
+test("generate a random persons CPR and name", async ({ page }) => {
   await page.goto("http://localhost:5173/");
 
   await page.getByRole('combobox').selectOption('cprAndName');
