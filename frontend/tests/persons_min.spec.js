@@ -14,7 +14,8 @@ test("generate two persons and validate all fields", async ({ page }) => {
     const jsonText = await output.textContent();
 
     // Convert JSON string into a JavaScript object
-    const persons = JSON.parse(jsonText);
+    const result = JSON.parse(jsonText);
+    const persons = result.persons;
 
     // Check that exactly two persons were generated
     expect(persons).toHaveLength(2);

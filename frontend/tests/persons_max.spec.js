@@ -14,7 +14,8 @@ test("generate 100 persons", async ({ page }) => {
     const jsonText = await output.textContent();
 
     // Convert JSON string into a JavaScript object
-    const persons = JSON.parse(jsonText);
+    const result = JSON.parse(jsonText);
+    const persons = result.persons;
 
     // Validate that exactly 100 persons exist
     expect(persons).toHaveLength(100);
