@@ -43,6 +43,7 @@ def test_postal_codes_api_returns_database_data():
     assert isinstance(data, list)
     assert len(data) > 0
 
+    # check that a specific postal code is in the respons
     assert {
         "postal_code": "1301",
         "town": "København K",
