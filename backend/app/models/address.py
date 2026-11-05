@@ -1,5 +1,7 @@
 from pydantic import BaseModel, field_serializer, field_validator
 
+from app.models.validators import is_ascii_digits
+
 from app.models.postal_code import PostalCode
 
 class Address(BaseModel):
@@ -23,7 +25,7 @@ class Address(BaseModel):
         number = value[:-1] if has_suffix else value
         if (
             not number
-            or not number.isdigit()
+            or not is_ascii_digits(number)
             or number[0] == "0"
             or int(number) > 999
             or len(value) > 4
@@ -39,7 +41,7 @@ class Address(BaseModel):
     def validate_floor(cls, value: str) -> str:
         if value != "st" and (
             not value
-            or not value.isdigit()
+            or not is_ascii_digits(value)
             or value[0] == "0"
             or int(value) > 99
         ):
@@ -52,14 +54,14 @@ class Address(BaseModel):
         if value in {"th", "mf", "tv"}:
             return value
 
-        if value.isdigit():
+        if is_ascii_digits(value):
             if value[0] != "0" and 1 <= int(value) <= 50:
                 return value
         elif len(value) >= 2 and "a" <= value[0] <= "z":
             suffix = value[1:]
             if suffix.startswith("-"):
                 suffix = suffix[1:]
-            if 1 <= len(suffix) <= 3 and suffix.isdigit():
+            if 1 <= len(suffix) <= 3 and is_ascii_digits(suffix):
                 return value
 
         raise ValueError(
