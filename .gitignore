@@ -183,3 +183,4 @@ backend/uv.lock
 
 # Postman
 .postman/
+frontend/test-results/.last-run.json
