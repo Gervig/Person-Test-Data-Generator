@@ -7,6 +7,7 @@ const ENDPOINTS = {
   persons: { label: 'Persons', call: (count) => api.getPersons(count) },
   cpr: { label: 'CPR', call: () => api.getCpr() },
   name: { label: 'Name', call: () => api.getName() },
+  address: { label: 'Address', call: () => api.address() },
   nameAndBirthDate: { label: 'Name and birth date', call: () => api.getNameAndBirthDate() },
   cprAndName: { label: 'CPR and name', call: () => api.getCprAndName() },
   cprNameAndBirthDate: { label: 'CPR, name and birth date', call: () => api.getCprNameAndBirthDate() },
