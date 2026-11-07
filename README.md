@@ -1,235 +1,454 @@
 # Personal Test Data Generator
 
-## 1. Assignment Overview
+A web application that generates fake information for non-existing Danish persons: names, CPR numbers, dates of birth, addresses and mobile phone numbers. It is built to be tested, and the repository contains the application together with its unit, integration, API and end-to-end tests.
 
-Design and implement **unit, integration, API, and end-to-end tests** for an application that generates fake personal data for testing other applications.
-
-The assignment must be completed in groups of **4 or 5 students**.
-
-If exceptional circumstances prevent you from working in a group, request a dispensation from the Head of Education, Marc Kluge, at [klu@ek.dk](mailto:klu@ek.dk).
-
-Please form your groups and enter your names in the Excel file **Groups - First Mandatory Assignment.xlsx**, available in Microsoft Teams.
-
-## 2. System Under Test
-
-The application generates fake information for non-existing Danish persons and consists of two main components:
-
-- **Backend:** Provides the requested information through an API.
-- **Frontend:** A graphical user interface (GUI) that consumes the API.
-
-The backend must expose a series of functions or a class with public methods that generate the information described below.
-
-### 2.1. Name and Gender
-
-Name and gender are treated as compound information consisting of:
-
-- First name
-- Last name
-- Gender
-
-Names and gender must be randomly selected from the provided `person-names.json` file.
-
-### 2.2. CPR Number
-
-A CPR number must consist of exactly **10 numeric digits**.
-
-- The first six digits identify the date of birth in the format `ddMMyy`.
-- The last four digits are randomly generated.
-- For female persons, the final digit must be even.
-- For male persons, the final digit must be odd.
-
-### 2.3. Date of Birth
-
-The date of birth must match the date encoded in the CPR number.
-
-### 2.4. Address
-
-An address consists of the following components:
-
-| Component | Requirements |
+| Part | Technology |
 |---|---|
-| Street | A random assortment of alphabetic characters |
-| Number | A number from 1 to 999, optionally followed by an uppercase letter, e.g. `43B` |
-| Floor | Either `st` or a number from 1 to 99 |
-| Door | `th`, `mf`, `tv`, a number from 1 to 50, or a lowercase letter optionally followed by a dash and then one to three numeric digits, e.g. `c3` or `d-14` |
-| Postal code and town | Randomly selected from the provided `addresses.sql` database |
+| Backend (REST API) | Python, FastAPI, pydantic, managed with [uv](https://docs.astral.sh/uv/) |
+| Database | MariaDB 11 in Docker (postal codes and towns) |
+| Frontend | React and Vite (JavaScript) |
+| Unit and integration tests | pytest, pytest-cov |
+| API tests | Postman |
+| End-to-end tests | Playwright |
 
-For more information, see [Danish address rules and guidance](https://danmarksadresser.dk/regler-og-vejledning/adresser).
+The original assignment text is in [assignment.md](assignment.md).
 
-### 2.5. Mobile Phone Number
+## Contents
 
-A mobile phone number must satisfy the following requirements:
+1. [Quick start](#quick-start)
+2. [Repository structure](#repository-structure)
+3. [Prerequisites](#prerequisites)
+4. [Step 1: Get the code](#step-1-get-the-code)
+5. [Step 2: Database](#step-2-database)
+6. [Step 3: Backend](#step-3-backend)
+7. [Step 4: Frontend](#step-4-frontend)
+8. [Running the tests](#running-the-tests)
+9. [API tests with Postman](#api-tests-with-postman)
+10. [API reference](#api-reference)
+11. [More documentation](#more-documentation)
+12. [Troubleshooting](#troubleshooting)
 
-- Consist of exactly **8 numeric digits**.
-- Start with one of the permitted prefixes listed below.
+## Quick start
 
-#### Permitted prefixes
+For readers who have the prerequisites installed (see [Prerequisites](#prerequisites)) and want the application running. Use two terminals. Every step is explained in the sections below.
 
-| Prefix length | Allowed prefixes |
+**Terminal 1: database and backend**
+
+```
+git clone https://github.com/Gervig/Person-Test-Data-Generator.git
+cd Person-Test-Data-Generator/backend
+docker compose up -d
+```
+
+Wait a few seconds until the database container is ready, then load the data and start the API:
+
+```
+docker cp ../data/addresses.sql test-data-mariadb:/tmp/addresses.sql
+docker exec -i test-data-mariadb mariadb -uroot -plocal_dev_password addresses -e "source /tmp/addresses.sql"
+cp .env.example .env
+uv sync
+uv run uvicorn app.main:app --reload
+```
+
+**Terminal 2: frontend**
+
+```
+cd Person-Test-Data-Generator/frontend
+npm install
+npm run dev
+```
+
+Open <http://localhost:5173> for the application and <http://127.0.0.1:8000/docs> for the interactive API documentation.
+
+## Repository structure
+
+```
+Person-Test-Data-Generator/
+├── backend/
+│   ├── app/
+│   │   ├── main.py                  FastAPI application (entry point)
+│   │   ├── database.py              MariaDB connection pool, configured from .env
+│   │   ├── data_loader.py           Loads data/person-names.json
+│   │   ├── generators.py            Random data generators
+│   │   ├── exceptions.py
+│   │   ├── routers/                 HTTP routes: health, postal_codes, address, person
+│   │   ├── controllers/             Thin layer between routes and services
+│   │   ├── services/                Application logic: address_service, person_service
+│   │   ├── repositories/            Database access: postal_code_repository
+│   │   └── models/                  Pydantic models and validation rules
+│   ├── tests/                       pytest suite
+│   ├── compose.yaml                 MariaDB container
+│   ├── .env.example                 Template for the database settings
+│   └── pyproject.toml               Dependencies and pytest configuration
+├── frontend/
+│   ├── src/
+│   │   ├── main.jsx                 Entry point
+│   │   ├── App.jsx                  The user interface
+│   │   ├── api/personApi.js         All calls to the backend API
+│   │   ├── App.css, index.css       Styles
+│   │   └── assets/                  Images
+│   ├── tests/                       Playwright end-to-end tests (*.spec.js)
+│   ├── public/                      Static files (icons)
+│   ├── vite.config.js               Vite settings, including the /api proxy
+│   ├── playwright.config.js         Playwright settings
+│   ├── eslint.config.js             ESLint rules
+│   └── package.json
+├── data/
+│   ├── addresses.sql                MariaDB dump with the postal codes and towns
+│   └── person-names.json            Names and genders used by the generators
+├── postman/                         Postman collection for the API tests
+├── docs/                            Documentation, screenshots and the test design PDF
+├── scripts/                         PowerShell scripts behind the .cmd files (Windows)
+└── setup.cmd, run.cmd, test.cmd, cov.cmd, covhtml.cmd   Windows shortcuts
+```
+
+A backend request passes through the layers in this order: router, controller, service, then the repository (database) or the generators. The pydantic models validate all generated data.
+
+### Windows shortcuts
+
+The `.cmd` files in the repository root start the PowerShell scripts in `scripts/` with the needed execution policy. They are optional; everything can also be done with the commands in this README.
+
+| File | What it does |
 |---|---|
-| 1 digit | `2` |
-| 2 digits | `30`, `31`, `40`, `41`, `42`, `50`, `51`, `52`, `53`, `60`, `61`, `71`, `81`, `91`, `92`, `93` |
-| 3 digits | `342`, `344–349`, `356–357`, `359`, `362`, `365–366`, `389`, `398`, `431`, `441`, `462`, `466`, `468`, `472`, `474`, `476`, `478`, `485–486`, `488–489`, `493–496`, `498–499`, `542–543`, `545`, `551–552`, `556`, `571–574`, `577`, `579`, `584`, `586–587`, `589`, `597–598`, `627`, `629`, `641`, `649`, `658`, `662–665`, `667`, `692–694`, `697`, `771–772`, `782–783`, `785–786`, `788–789`, `826–827`, `829` |
+| `setup.cmd` | Checks Python and Docker, installs uv if it is missing, runs `uv sync`, checks that `backend/.env` exists and starts the database container. It does not create `.env` and does not load the data, so Step 2.2 and Step 3.1 are still needed |
+| `run.cmd` | Starts the API on port 8000 |
+| `test.cmd` | Runs the backend tests |
+| `cov.cmd` | Runs the backend tests with coverage in the terminal |
+| `covhtml.cmd` | Runs the backend tests with coverage and opens the HTML report |
 
-For more information, see the [Danish numbering plan guidance (2025)](https://digst.dk/media/4knkrjpk/nummervejledning-2025.pdf).
+## Prerequisites
 
-### 2.6. Functional Requirements
+| Tool | Version | Used for |
+|---|---|---|
+| Git | Any recent version | Getting the code |
+| Python | 3.12 or newer (the developers use 3.12 and 3.13) | Backend |
+| uv | Any recent version, see <https://docs.astral.sh/uv/getting-started/installation/> | Installs and runs the backend dependencies |
+| Docker Desktop | Any recent version | Runs MariaDB 11 in a container |
+| Node.js and npm | Node 20.19 or newer, or 22.12 or newer | Frontend (Vite 8 and ESLint 10 require these versions) |
+| Postman | Current desktop app | API tests (optional, only to run the Postman collection) |
 
-The backend must provide **one function or method and one corresponding API endpoint** for each of the following functionalities:
+Check the installed versions:
 
-1. Return a fake CPR number.
-2. Return a fake first name, last name, and gender.
-3. Return a fake first name, last name, gender, and date of birth.
-4. Return a fake CPR number, first name, last name, and gender.
-5. Return a fake CPR number, first name, last name, gender, and date of birth.
-6. Return a fake address.
-7. Return a fake mobile phone number.
-8. Return all information for a fake person:
-   - CPR number
-   - First name
-   - Last name
-   - Gender
-   - Date of birth
-   - Address
-   - Mobile phone number
-9. Return fake person information in bulk, generating all information for **2 to 100 persons**.
+```
+git --version
+python --version
+uv --version
+docker --version
+node --version
+npm --version
+```
 
-### API endpoints
+**macOS and Linux:** the Python package `mariadb` is built against the MariaDB Connector/C library. Install it before running `uv sync`, otherwise the installation stops with `mariadb_config not found`:
 
-The backend exposes the required functionality through these `GET` endpoints:
+- Debian and Ubuntu: `sudo apt install libmariadb-dev`
+- macOS (Homebrew): `brew install mariadb-connector-c`
+
+On Windows no extra installation has been needed.
+
+## Step 1: Get the code
+
+```
+git clone https://github.com/Gervig/Person-Test-Data-Generator.git
+cd Person-Test-Data-Generator
+```
+
+## Step 2: Database
+
+The database runs in a Docker container. The configuration is in `backend/compose.yaml`:
+
+| Setting | Value |
+|---|---|
+| Image | `mariadb:11` |
+| Container name | `test-data-mariadb` |
+| Port | `3306` |
+| Database | `addresses` |
+| Root password | `local_dev_password` (for local development only) |
+| Storage | Docker volume `mariadb_data` |
+
+### 2.1 Start the container
+
+Start Docker Desktop and wait until it is running. Then, from the `backend` folder:
+
+```
+cd backend
+docker compose up -d
+docker compose ps
+```
+
+The first start takes a few seconds while MariaDB initialises. Wait until the container is ready before the next step. `docker logs test-data-mariadb` should end with a line that says `ready for connections`.
+
+### 2.2 Load the postal codes
+
+The database is filled from the SQL dump `data/addresses.sql`. The dump is already prepared for the `addresses` database, so it does not need to be edited.
+
+From the `backend` folder, copy the file into the container:
+
+```
+docker cp ../data/addresses.sql test-data-mariadb:/tmp/addresses.sql
+```
+
+Open the MariaDB console in the container:
+
+```
+docker exec -it test-data-mariadb mariadb -uroot -plocal_dev_password addresses
+```
+
+At the `MariaDB [addresses]>` prompt, run the dump and leave the console:
+
+```sql
+source /tmp/addresses.sql
+exit
+```
+
+The same import without the interactive console:
+
+```
+docker exec -i test-data-mariadb mariadb -uroot -plocal_dev_password addresses -e "source /tmp/addresses.sql"
+```
+
+The dump can be run again at any time. It drops and recreates the table `postal_code`.
+
+### 2.3 Check the data
+
+```
+docker exec -it test-data-mariadb mariadb -uroot -plocal_dev_password addresses -e "SELECT COUNT(*) FROM postal_code;"
+```
+
+The result should be **589** rows. The table has the columns `cPostalCode` and `cTownName`. For example, `1301` is `København K`.
+
+### 2.4 Stop and start the database
+
+```
+docker compose stop     # stop, the data is kept
+docker compose up -d    # start again
+```
+
+Do not run `docker compose down -v` unless you want to delete the stored data. Then Step 2.2 has to be repeated.
+
+## Step 3: Backend
+
+Run all commands in this section from the `backend` folder.
+
+### 3.1 Configure the database connection
+
+Copy the template. The default values match the Docker container from Step 2:
+
+```
+cp .env.example .env
+```
+
+(In Windows PowerShell, `cp` is an alias for `Copy-Item`.) The file `.env` is ignored by Git. It contains:
+
+| Variable | Default in `.env.example` | Meaning |
+|---|---|---|
+| `DB_HOST` | `localhost` | Database host |
+| `DB_PORT` | `3306` | Database port |
+| `DB_USER` | `root` | Database user |
+| `DB_PASSWORD` | `local_dev_password` | Database password (required) |
+| `DB_NAME` | `addresses` | Database name |
+
+### 3.2 Install the dependencies
+
+```
+uv sync
+```
+
+This creates the virtual environment `backend/.venv` and installs the dependencies from `pyproject.toml`, including the test tools. If uv needs a Python version that is not installed, it can download one.
+
+### 3.3 Start the API
+
+```
+uv run uvicorn app.main:app --reload
+```
+
+The API now runs on port 8000:
+
+- Status: <http://127.0.0.1:8000/>
+- Interactive documentation (Swagger UI): <http://127.0.0.1:8000/docs>
+- Example: <http://127.0.0.1:8000/person>
+
+Keep this terminal open. Stop the server with `Ctrl+C`.
+
+On Windows, `run.cmd` in the repository root does the same.
+
+## Step 4: Frontend
+
+Open a second terminal. Run all commands in this section from the `frontend` folder. The backend (Step 3) must be running.
+
+```
+cd frontend
+npm install
+npm run dev
+```
+
+The application is available at <http://localhost:5173>.
+
+### Using the application
+
+1. Select what to generate in the drop-down list: a person, a list of persons, a CPR number, a name, an address, a mobile phone number, or one of the combinations of name, CPR number and date of birth.
+2. For a list of persons, enter a number from 2 to 100.
+3. Click **Generate**. The response of the API is shown as JSON below the button. Errors, for example a number outside the range, are shown in red.
+
+### How the frontend reaches the backend
+
+The browser calls `/api/...` on the frontend server. Vite forwards the call to `http://localhost:8000/...` and removes the `/api` prefix. This is configured in `frontend/vite.config.js`, and the calls themselves are in `frontend/src/api/personApi.js`. No CORS settings are needed. The backend must run on port 8000. If the port is changed, change `target` in `vite.config.js` and restart `npm run dev`.
+
+### Other frontend commands
+
+| Command | Purpose |
+|---|---|
+| `npm run dev` | Development server with hot reload on port 5173 |
+| `npm run build` | Production build into `frontend/dist` |
+| `npm run preview` | Serves the production build (the `/api` proxy is only available in `npm run dev`) |
+| `npm run lint` | Checks the code with ESLint |
+
+## Running the tests
+
+### Backend: unit and integration tests (pytest)
+
+From the `backend` folder:
+
+```
+uv run pytest -v
+```
+
+All tests should pass (160 tests at the time of writing). The model tests use named valid and invalid partitions and boundary values. Only the two tests in `tests/test_database/` need the running MariaDB container with the data from Step 2. All other tests run without a database, because they replace the database access with test doubles.
+
+| Folder | What it tests |
+|---|---|
+| `tests/test_models/` | Validation rules of `PostalCode`, `Address` and `Person` |
+| `tests/test_generators/` | Properties of the generated data, for example the CPR number and phone number rules |
+| `tests/test_services/` | Generated addresses and persons pass the model validation |
+| `tests/test_repositories/` | Postal code repository, including error handling and closing of connections |
+| `tests/test_routes/` | Limits of the `count` parameter of the API |
+| `tests/test_api_contract.py` | Keys and types in the API responses |
+| `tests/test_database/` | Integration test against MariaDB: connection and the `/postal-codes` endpoint |
+
+Shared test data (a valid postal code, address and person) is in `tests/conftest.py`.
+
+Code coverage, including branch coverage and the lines that are not covered:
+
+```
+uv run pytest --cov=app --cov-branch --cov-report=term-missing
+```
+
+For an HTML report in `backend/htmlcov` (open `htmlcov/index.html`), add `--cov-report=html`.
+
+On Windows, the shortcuts in the repository root run the same commands from the project's virtual environment (run `uv sync` first): `test.cmd` runs the tests, `cov.cmd` shows the coverage in the terminal, and `covhtml.cmd` also writes and opens the HTML report.
+
+### Frontend: end-to-end tests (Playwright)
+
+The end-to-end tests open the application in a real browser, generate data through the user interface and check the result. They need the complete system, so before running them:
+
+1. The database container is running with the data loaded (Step 2).
+2. The backend is running on port 8000 (Step 3).
+3. The frontend is running on port 5173 (`npm run dev`, Step 4).
+
+Playwright does not start these itself. Then, in a third terminal, from the `frontend` folder:
+
+```
+npx playwright install          # once: downloads the browsers
+npx playwright test             # runs the tests in Chromium, Firefox and WebKit
+npx playwright test --project=chromium    # only one browser
+npx playwright show-report      # opens the HTML report of the last run
+```
+
+On Linux, use `npx playwright install --with-deps` to also install the system libraries that the browsers need.
+
+There are 14 tests per browser in `frontend/tests/`, one file per functionality:
+
+| File | Checks |
+|---|---|
+| `cpr.spec.js` | A CPR number has 10 digits |
+| `name.spec.js` | First name, last name and gender (`male` or `female`) |
+| `name_and_birthdate.spec.js` | Name, gender and a date of birth in the format `yyyy-mm-dd` |
+| `cpr_and_name.spec.js` | CPR number, name and gender |
+| `cpr_name_and_birthdate.spec.js` | CPR number, name, gender and date of birth |
+| `address.spec.js` | Street, number and a four-digit postal code with a town |
+| `phone_number.spec.js` | A mobile phone number has 8 digits |
+| `person.spec.js` | All fields of one person |
+| `persons.spec.js` | Default of 2 persons, an explicit 2, 100 persons, and rejection (HTTP 422) of 1 and 101 |
+| `example.spec.js` | The start page loads |
+
+### Frontend: static analysis
+
+From the `frontend` folder: `npm run lint`.
+
+## API tests with Postman
+
+The Postman collection **Personal Test Data Generator API** is in `postman/collections/Personal Test Data Generator API/`. It is stored in Postman's file format for Git, with one file per request. It contains one request for each endpoint:
+
+status, postal codes, CPR, name, name and birth date, CPR and name, CPR, name and birth date, address, mobile phone number, person, and persons (2 to 100).
+
+**Tests in the collection**
+
+- Every request checks that the status code is 200, that the response is valid JSON, and that the response time is under 1000 ms.
+- The request *Get persons 2 to 100* also sends ten extra requests with different values of `count` (1, 2, 3, 99, 100, 101, 0, -1, `abc` and empty). It checks that the values outside 2 to 100 give HTTP 422, and that valid values return the right number of persons with the expected fields.
+
+**Run the collection**
+
+1. Start the database and the backend (Steps 2 and 3).
+2. In Postman, open the collection. Either connect the workspace to the cloned repository with Postman's Git integration, or drag the folder `postman/collections/Personal Test Data Generator API` into Postman's **Import** window.
+3. Set the collection variable `base_url` to `http://127.0.0.1:8000`. Open the collection, then the **Variables** tab, and enter the value as both initial and current value. The variable is empty in the repository, and the requests use it as `{{base_url}}/...`.
+4. Open the collection's menu, choose **Run collection**, and click **Run**.
+
+All 43 tests should pass:
+
+![Postman collection run: 43 of 43 tests passed](docs/postman.png)
+
+## API reference
+
+All endpoints use the method `GET`, and there are no URL prefixes. Open <http://127.0.0.1:8000/docs> for parameters and example responses.
 
 | Endpoint | Response |
 |---|---|
-| `/cpr` | A fake CPR number |
-| `/name` | First name, last name, and gender |
-| `/name-and-birth-date` | Name and gender plus date of birth |
-| `/cpr-and-name` | CPR number, name, and gender |
-| `/cpr-name-and-birth-date` | CPR number, name, gender, and date of birth |
-| `/address` | A fake address |
-| `/mobile-phone-number` | A fake Danish mobile phone number |
-| `/person` | All information for one fake person |
-| `/persons?count=2` through `/persons?count=100` | The requested number of complete fake persons |
-| `/postal-codes` | Postal codes loaded from the address database |
+| `/` | Status message: `{"message": "Personal Test Data Generator API is running!"}` |
+| `/cpr` | `cpr` |
+| `/name` | `first_name`, `last_name`, `gender` |
+| `/name-and-birth-date` | Name and gender, plus `date_of_birth` |
+| `/cpr-and-name` | `cpr` plus name and gender |
+| `/cpr-name-and-birth-date` | `cpr`, name, gender and `date_of_birth` |
+| `/address` | `street`, `number`, `floor`, `door` and `postal_code` (with `postal_code` and `town_name`) |
+| `/mobile-phone-number` | `mobile_phone_number` |
+| `/person` | All fields of one person: name, gender, `date_of_birth`, `cpr`, `mobile_phone_number` and `address` |
+| `/persons?count=N` | `{"persons": [...]}` with N complete persons. `count` is from 2 to 100, default 2; other values give HTTP 422 |
+| `/postal-codes` | All postal codes from the database as a list of `postal_code` and `town` |
 
-### 2.7. Implementation Choices
+If the database cannot be reached, the endpoints that use it respond with HTTP 500 and `{"detail": "Could not retrieve data from the database."}`.
 
-The group may choose:
+### Data rules
 
-- Programming language(s) and framework(s).
-- API format, e.g. REST.
-- Database technology. If a database other than MySQL/MariaDB is selected, a data migration is required.
-- Output format for functions, methods, and API responses, e.g. JSON, XML, CSV, formatted text, or standard output.
-
-### 2.8. Reference Implementations
-
-You may use the following existing application code directly or as inspiration:
-
-- **Backend:** [fake_info — MariaDB / PHP 8, Dockerized](https://github.com/arturomorarioja/fake_info/)
-- **Frontend:** [js_fake_info_frontend — JavaScript / CSS3 / HTML5](https://github.com/arturomorarioja/js_fake_info_frontend)
-
-## 3. Testing Requirements
-
-### 3.1. Unit and Integration Testing
-
-- Write unit tests wherever appropriate.
-- Write integration tests wherever appropriate.
-
-### 3.2. API Testing
-
-- Implement API tests.
-- Provide test scripts using Postman, Insomnia, Thunder Client, or a similar tool.
-
-### 3.3. Test Case Design
-
-Design test cases using all three of the following approaches:
-
-- **Black-box testing:** Manual analysis of the application's requirements and behaviour.
-- **White-box testing:** Automated analysis based on the application's internal structure and code.
-- **Experience-based testing:** Identify edge cases, business-logic-derived cases, and other interesting scenarios.
-
-### 3.4. Static Code Analysis
-
-- Use static code analysis tools beyond basic linters to analyse and improve the code.
-- Include a code coverage tool if the chosen unit testing framework does not already provide coverage.
-
-### 3.5. Continuous Integration and Testing
-
-- Create a continuous integration (CI) job or pipeline that tests the integration of the application.
-- Configure the CI process to run all of the following:
-  - Unit tests
-  - Integration tests
-  - API tests
-  - Static code analysis
-
-### 3.6. End-to-End Testing
-
-- Design and implement end-to-end tests using Selenium WebDriver, Cypress, Playwright, or a similar framework.
-- **Selenium IDE is not permitted.**
-
-## 4. Delivery Requirements
-
-Submit the assignment through Itslearning as **one ZIP file**.
-
-**Deadline: 19 October 2026 at 23:59.**
-
-The ZIP file must contain:
-
-1. **Application source code**, if different from the provided reference implementation.
-2. **Database creation and population script**, if different from the provided script.
-3. **Test source code**, including:
-   - Unit tests
-   - Integration tests
-   - End-to-end tests
-4. **CI configuration files**, such as YAML, XML, or another format used by the selected CI tool. A screenshot is also acceptable.
-5. **A PDF documenting black-box test design techniques**, including relevant techniques such as:
-   - Valid and invalid equivalence partitions
-   - Boundary value analysis
-   - Decision tables, where applicable
-6. **Screenshots of static testing tools** demonstrating the value they contributed to the testing activities.
-
-## 5. Presentation
-
-Each group must present its work to the rest of the class on **20 October 2026**.
-
-The presentation is limited to **10 minutes per group**, and **all group members must present a part**.
-
-### 5.1. Required Presentation Content
-
-The presentation must demonstrate and explain:
-
-1. The application running.
-2. The application source code.
-3. The unit, integration, and end-to-end test code. The end-to-end tests must be executed during the presentation.
-4. The API test scripts in Postman or a similar tool.
-5. The criteria used to design test cases:
-   - Black-box testing techniques
-   - White-box testing techniques
-6. The value provided by static testing tools, including code coverage where appropriate.
-7. The CI job or pipeline:
-   - Walkthrough of the configuration.
-   - Demonstration of the pipeline running.
-
-### 5.2. Presentation Checklist
-
-- [ ] Demonstrate the application.
-- [ ] Explain the application code.
-- [ ] Show unit and integration tests.
-- [ ] Run the end-to-end tests.
-- [ ] Demonstrate the API tests.
-- [ ] Explain black-box and white-box test design.
-- [ ] Demonstrate the static analysis tools.
-- [ ] Walk through and run the CI pipeline.
-- [ ] Ensure every group member presents a part.
-
-## 6. Important Dates
-
-| Event | Date |
+| Field | Rule |
 |---|---|
-| Assignment submission deadline | **19 October 2026, 23:59** |
-| Group presentations | **20 October 2026** |
+| Gender | `male` or `female` |
+| CPR number | 10 digits. The first six are the date of birth as `ddMMyy`. The last digit is even for women and odd for men |
+| Mobile phone number | 8 digits, starting with one of the permitted Danish mobile prefixes |
+| Postal code | 4 digits, chosen at random from the database |
+| Address number | 1 to 999, optionally followed by one uppercase letter, for example `43B` |
+| Address floor | `st`, or a number from 1 to 99 |
+| Address door | `th`, `mf` or `tv`; or a number from 1 to 50; or a lowercase letter, an optional dash and one to three digits, for example `c3` or `d-14` |
 
-## 7. Final Notes
+## More documentation
 
-The goal is not only to build a working fake personal data generator, but also to demonstrate a structured and comprehensive testing process covering the application's individual components, integrations, API, and user interface.
+| Document | Content |
+|---|---|
+| [docs/Black-box_test_design.pdf](docs/Black-box_test_design.pdf) | The black-box test design: valid and invalid equivalence partitions, boundary values and decision tables behind the test cases |
+| [docs/assignment.md](assignment.md) | The assignment text |
 
-Ensure that all required tests, analysis tools, CI configuration, documentation, and presentation materials are included in the final delivery.
+## Troubleshooting
+
+| Problem | Cause and solution |
+|---|---|
+| `uv` is not recognized | Restart the terminal after installing uv. On Windows, uv is installed in `%USERPROFILE%\.local\bin`; add that folder to `PATH`. |
+| `uv sync` fails with `mariadb_config not found` | The MariaDB Connector/C library is missing on macOS or Linux. See [Prerequisites](#prerequisites). |
+| `DB_PASSWORD must be configured` or HTTP 500 from the API | The file `backend/.env` is missing or empty. Copy `.env.example` (Step 3.1) and restart the API. |
+| `Can't connect to server` or HTTP 500 from the API | The container is not running or not ready. Check with `docker compose ps` and `docker logs test-data-mariadb`. |
+| The data is missing: `/postal-codes` returns an empty list, or the table does not exist | Step 2.2 was not done. Repeat it. |
+| Port 3306 is already in use | Another MariaDB or MySQL server is running. Stop it, or change the left port in `backend/compose.yaml` (`"3307:3306"`) and set `DB_PORT=3307` in `.env`. |
+| Port 8000 or 5173 is already in use | Stop the other program. If the backend port changes, update `target` in `frontend/vite.config.js`. |
+| The frontend shows `Request failed: 500` or a proxy error | The backend or the database is not running. Check <http://127.0.0.1:8000/> in the browser. |
+| `npm install` fails with engine warnings or errors | Node.js is too old. Install Node 20.19 or newer, or 22.12 or newer. |
+| Playwright: `Executable doesn't exist` | Run `npx playwright install` once. |
+| Playwright: `connection refused` or the tests time out | The frontend, backend or database is not running. See the three conditions at the start of the end-to-end section. |
+| PowerShell blocks the scripts in `scripts/` | Use the `.cmd` files in the repository root. They start the scripts with the needed execution policy. |
+| Postman requests fail with an invalid URL | The collection variable `base_url` is empty. See step 3 of the Postman section. |
