@@ -431,86 +431,110 @@ If the database cannot be reached, the endpoints that use it respond with HTTP 5
 
 ## Continuous integration and delivery (CI/CD)
 
-> **Status:** work in progress. The pipeline is not set up yet. The sections marked `TODO` will be filled in once the implementation is decided.
+The project has a continuous integration (CI) pipeline built with GitHub Actions. Every change is checked automatically by static analysis, unit tests, integration tests, API tests and end-to-end tests. Continuous delivery (CD) is not set up yet; see [Continuous delivery (CD)](#continuous-delivery-cd).
 
-### Goal
-
-Every change to the project should be checked automatically. The pipeline must run:
-
-| Stage | What it checks | Command (run from the repo root) |
-|---|---|---|
-| Static code analysis | Code quality, security issues and typing | `TODO: final tool list` |
-| Unit tests | Models, generators, services, routes | `cd backend && uv run pytest --ignore=tests/test_database` |
-| Integration tests | Repository against a real MariaDB | `cd backend && uv run pytest tests/test_database` |
-| API tests | The Postman collection against the running API | `postman collection run "postman/collections/Personal Test Data Generator API"` |
-| End-to-end tests | Playwright tests of the frontend | `cd frontend && npx playwright test` |
-
-The integration, API and end-to-end tests need the database and the API running first. See [Running the database](#running-the-database) and [Running the API](#running-the-api) for the setup steps.
+[![CI](https://github.com/Gervig/Person-Test-Data-Generator/actions/workflows/ci.yml/badge.svg)](https://github.com/Gervig/Person-Test-Data-Generator/actions/workflows/ci.yml)
 
 ### CI tool
 
-- **Tool:** `TODO: Jenkins / GitHub Actions / other`
-- **Pipeline file:** `TODO: path, e.g. Jenkinsfile or .github/workflows/ci.yml`
-- **Where it runs:** `TODO: local machine / server / GitHub-hosted runner`
-- **Trigger:** `TODO: e.g. on every push and pull request to main, plus manual runs`
+| | |
+|---|---|
+| Tool | GitHub Actions |
+| Pipeline file | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) |
+| Shared setup step | [`.github/actions/setup-backend/action.yml`](.github/actions/setup-backend/action.yml) installs the MariaDB client library and uv, runs `uv sync`, and optionally starts MariaDB and loads `data/addresses.sql` |
+| Runs on | GitHub-hosted runners (`ubuntu-latest`) |
+| Triggers | Every push to `main`, every pull request, and manual runs (**Actions → CI → Run workflow**) |
+| Security scan | [`.github/workflows/codeql.yml`](.github/workflows/codeql.yml): CodeQL for Python and JavaScript on push and pull requests to `main`, and weekly |
+| Dependency updates | [`.github/dependabot.yml`](.github/dependabot.yml): Dependabot opens pull requests for outdated GitHub Actions |
 
-### Pipeline stages
+A new push to the same branch cancels the run that is still in progress.
 
-`TODO: describe the final stages and their order, for example:`
+### Pipeline jobs
 
-1. Check out the code
-2. Install dependencies (`uv sync`, `npm ci`)
-3. Start MariaDB and load `data/addresses.sql`
-4. Run static analysis
-5. Run unit tests, then integration tests, with coverage
-6. Start the API and run the Postman collection
-7. Start the frontend and run the Playwright tests
-8. Publish reports (coverage, Playwright report)
+The four jobs run in parallel and are independent of each other.
 
-### Secrets and configuration
-
-| Name | Purpose | Where it is stored |
+| Job | What it does | Tools |
 |---|---|---|
-| Database settings (`DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`) | Connect to the test MariaDB | `TODO` |
-| `POSTMAN_API_KEY` | Only needed if the collection is run from Postman's cloud | `TODO: CI credential store` |
+| **Static analysis** | Lints and type checks the backend and lints the frontend | ruff, bandit, mypy, ESLint |
+| **Backend tests** (Python 3.12 and 3.13) | Runs the unit tests, then the integration tests against a MariaDB container with the imported data, and creates a coverage report | pytest, pytest-cov |
+| **API tests (Postman)** | Starts MariaDB and the API, then runs the Postman collection in `postman/collections/` | Postman CLI |
+| **E2E tests** (Chromium, Firefox, WebKit) | Starts MariaDB, the API and the frontend, then runs the Playwright tests once per browser | Playwright |
 
-Secrets are never committed to the repository.
+Details per job:
+
+1. **Static analysis**
+   - `ruff check` (rules for style, imports, bugs, complexity and security), `bandit` (security scan) and `mypy` (type checking) run in `backend`. The configuration is in `backend/pyproject.toml`.
+   - `npm run lint` runs ESLint in `frontend`.
+2. **Backend tests**
+   - Unit tests: `pytest --ignore=tests/test_database`.
+   - Integration tests: `pytest tests/test_database`, against the MariaDB container started from `backend/compose.yaml`.
+   - Coverage is measured with branch coverage over both steps. The pipeline fails if coverage drops below **90%** (`fail_under` in `backend/pyproject.toml`).
+3. **API tests**
+   - The API is started with uvicorn on `http://127.0.0.1:8000`, and the collection's `base_url` variable points there.
+   - The Postman CLI is installed and runs `postman collection run "postman/collections/Personal Test Data Generator API"`. The job fails if any Postman test fails.
+4. **E2E tests**
+   - The Playwright browser is installed, the API and the Vite dev server (`http://localhost:5173`) are started, and `npx playwright test --project=<browser>` runs the specs.
+   - The three browsers run as separate parallel jobs, so one failing browser does not stop the others.
+
+### Configuration and secrets
+
+| Name | Purpose | Where it is set |
+|---|---|---|
+| `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` | Connect to the test MariaDB | `env:` block at the top of `ci.yml`. The values match `backend/compose.yaml`. |
+
+The database password is the same throw-away value as in the local development setup. It protects a container that only exists while the job runs, so no repository secret is needed. The pipeline does not use any other secrets: the Postman collection runs from the files in the repository, so no Postman API key is required.
 
 ### Reports and artifacts
 
-`TODO: describe where results can be found, for example the coverage report and the Playwright HTML report.`
+After a run, open it under the **Actions** tab. The run summary lists the jobs and their results, and the **Artifacts** section at the bottom contains:
+
+| Artifact | Content |
+|---|---|
+| `coverage-python-3.12`, `coverage-python-3.13` | HTML and XML coverage report (`htmlcov/`, `coverage.xml`) |
+| `playwright-report-chromium`, `-firefox`, `-webkit` | Playwright HTML report for each browser |
+| `api-log`, `logs-<browser>` | API and frontend logs, uploaded only when a job fails |
+
+The static analysis output (ruff, bandit, mypy and ESLint) is in the job log of **Static analysis**. Ruff findings also appear as annotations on the changed lines in a pull request. CodeQL results are under **Security → Code scanning**.
 
 ### Running the checks locally
 
-Until the pipeline exists, the same checks can be run by hand with the commands in the table above. For example, to run the backend tests with coverage:
+The same checks can be run on your own machine before pushing. Start the database first (see [Step 2: Database](#step-2-database)), then run from `backend`:
 
 ```powershell
 cd backend
+uv run ruff check .
+uv run bandit -c pyproject.toml -r app
+uv run mypy
 uv run pytest --cov=app --cov-branch --cov-report=term-missing
 ```
 
+and from `frontend`:
+
+```powershell
+cd frontend
+npm run lint
+```
+
+The API tests and end-to-end tests are described in [API tests with Postman](#api-tests-with-postman) and [Frontend: end-to-end tests (Playwright)](#frontend-end-to-end-tests-playwright).
+
 ### Continuous delivery (CD)
 
-`TODO: decide whether the project needs a delivery step. The assignment only requires CI. Possible options:`
-
-- Build and publish a Docker image of the backend and frontend
-- Deploy to a hosting service
-- No CD, with the pipeline ending after the checks
-
-### Pipeline status
-
-`TODO: add a build status badge once the pipeline is running.`
+> **TODO:** Continuous delivery is not set up yet. The assignment requires CI only. Decide whether to add a delivery step, for example:
+>
+> - Build Docker images of the backend and frontend
+> - Deploy to a hosting service
+> - No CD, so the pipeline ends after the checks
 
 ### Screenshots
 
-`TODO: add screenshots of a successful pipeline run and of the static analysis output for the assignment.`
+![docs/github_actions.png](docs/github_actions.png)
 
 ## More documentation
 
 | Document | Content |
 |---|---|
 | [docs/Black-box_test_design.pdf](docs/Black-box_test_design.pdf) | The black-box test design: valid and invalid equivalence partitions, boundary values and decision tables behind the test cases |
-| [docs/assignment.md](assignment.md) | The assignment text |
+| [docs/assignment.md](docs/assignment.md) | The assignment text |
 
 ## Troubleshooting
 
