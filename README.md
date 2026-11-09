@@ -25,8 +25,9 @@ The original assignment text is in [assignment.md](assignment.md).
 8. [Running the tests](#running-the-tests)
 9. [API tests with Postman](#api-tests-with-postman)
 10. [API reference](#api-reference)
-11. [More documentation](#more-documentation)
-12. [Troubleshooting](#troubleshooting)
+11. [Continuous integration and delivery (CI/CD)](#continuous-integration-and-delivery-cicd)
+12. [More documentation](#more-documentation)
+13. [Troubleshooting](#troubleshooting)
 
 ## Quick start
 
