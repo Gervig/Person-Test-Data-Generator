@@ -9,7 +9,7 @@ app = FastAPI(title="Personal Test Data Generator API")
 
 async def database_exception_handler(
     request: Request,
-    exc: DatabaseError | PostalCodeUnavailableError,
+    exc: Exception,
 ) -> JSONResponse:
     return JSONResponse(
         status_code=500,

@@ -1,0 +1,193 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+# Database settings for the backend. They match backend/compose.yaml.
+env:
+  DB_HOST: 127.0.0.1
+  DB_PORT: "3306"
+  DB_USER: root
+  DB_PASSWORD: local_dev_password
+  DB_NAME: addresses
+
+jobs:
+  static-analysis:
+    name: Static analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: ./.github/actions/setup-backend
+
+      - name: Ruff (lint, imports, complexity, security rules)
+        working-directory: backend
+        run: uv run ruff check . --output-format=github
+
+      - name: Bandit (security scan)
+        working-directory: backend
+        run: uv run bandit -c pyproject.toml -r app
+
+      - name: Mypy (type checking)
+        working-directory: backend
+        run: uv run mypy
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: ESLint (frontend)
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run lint
+
+  backend-tests:
+    name: Backend tests (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: ./.github/actions/setup-backend
+        with:
+          python-version: ${{ matrix.python-version }}
+          load-data: "true"
+
+      # Unit tests: models, generators, services, routes and repository tests.
+      # They do not use the database.
+      - name: Unit tests
+        working-directory: backend
+        run: uv run pytest -v --ignore=tests/test_database --cov=app --cov-branch --cov-report=
+
+      # Integration tests: the real MariaDB container with the imported data.
+      - name: Integration tests
+        working-directory: backend
+        run: uv run pytest -v tests/test_database --cov=app --cov-branch --cov-append --cov-report=
+
+      - name: Coverage report
+        working-directory: backend
+        run: |
+          uv run coverage report
+          uv run coverage xml
+          uv run coverage html
+
+      - name: Upload coverage report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-python-${{ matrix.python-version }}
+          path: |
+            backend/htmlcov
+            backend/coverage.xml
+
+  api-tests:
+    name: API tests (Postman)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: ./.github/actions/setup-backend
+        with:
+          load-data: "true"
+
+      - name: Start the API
+        working-directory: backend
+        run: |
+          nohup uv run uvicorn app.main:app --host 127.0.0.1 --port 8000 > ../api.log 2>&1 &
+          curl --retry 30 --retry-delay 1 --retry-connrefused -fsS http://127.0.0.1:8000/
+
+      - name: Install Postman CLI
+        run: curl -o- "https://dl-cli.pstmn.io/install/linux64.sh" | sh
+
+      # The collection variable base_url is http://127.0.0.1:8000 in the collection.
+      - name: Run the Postman collection
+        run: postman collection run "postman/collections/Personal Test Data Generator API"
+
+      - name: Upload API log
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-log
+          path: api.log
+
+  e2e-tests:
+    name: E2E tests (${{ matrix.browser }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: ./.github/actions/setup-backend
+        with:
+          load-data: "true"
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Install the Playwright browser
+        working-directory: frontend
+        run: npx playwright install --with-deps ${{ matrix.browser }}
+
+      - name: Start the API
+        working-directory: backend
+        run: |
+          nohup uv run uvicorn app.main:app --host 127.0.0.1 --port 8000 > ../api.log 2>&1 &
+          curl --retry 30 --retry-delay 1 --retry-connrefused -fsS http://127.0.0.1:8000/
+
+      - name: Start the frontend
+        working-directory: frontend
+        run: |
+          nohup npm run dev > ../frontend.log 2>&1 &
+          curl --retry 30 --retry-delay 1 --retry-connrefused -fsS http://localhost:5173/
+
+      - name: Run the Playwright tests
+        working-directory: frontend
+        env:
+          PLAYWRIGHT_HTML_OPEN: never
+        run: npx playwright test --project=${{ matrix.browser }}
+
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ matrix.browser }}
+          path: frontend/playwright-report
+
+      - name: Upload logs
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs-${{ matrix.browser }}
+          path: |
+            api.log
+            frontend.log

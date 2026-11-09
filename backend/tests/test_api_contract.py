@@ -4,7 +4,6 @@ from app.main import app
 from app.models.postal_code import PostalCode
 from app.repositories import postal_code_repository
 
-
 client = TestClient(app)
 
 

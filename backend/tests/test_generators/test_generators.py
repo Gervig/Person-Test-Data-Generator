@@ -42,4 +42,4 @@ def test_phone_number_has_valid_length_and_prefix() -> None:
         assert len(phone_number) == 8, seed
         assert phone_number.isdigit(), seed
         assert phone_number.startswith(ALLOWED_PHONE_PREFIXES), seed
-        
+

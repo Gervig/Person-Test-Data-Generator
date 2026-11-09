@@ -1,8 +1,8 @@
 from pydantic import BaseModel, field_serializer, field_validator
 
+from app.models.postal_code import PostalCode
 from app.models.validators import is_ascii_digits
 
-from app.models.postal_code import PostalCode
 
 class Address(BaseModel):
     street: str
@@ -35,7 +35,7 @@ class Address(BaseModel):
                 "an uppercase letter"
             )
         return value
-    
+
     @field_validator("floor")
     @classmethod
     def validate_floor(cls, value: str) -> str:

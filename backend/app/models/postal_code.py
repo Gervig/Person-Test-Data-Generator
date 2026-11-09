@@ -2,6 +2,7 @@ from pydantic import AliasChoices, BaseModel, Field, field_validator
 
 from app.models.validators import is_ascii_digits
 
+
 class PostalCode(BaseModel):
     postal_code: str
     town: str = Field(validation_alias=AliasChoices("town", "town_name"))

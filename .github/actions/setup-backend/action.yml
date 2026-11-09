@@ -1,0 +1,58 @@
+name: Set up backend
+description: >
+  Installs the system libraries, uv and the Python dependencies of the backend,
+  and optionally starts the MariaDB container with the postal code data.
+
+inputs:
+  python-version:
+    description: Python version used by uv
+    default: "3.12"
+  load-data:
+    description: Start the MariaDB container and import data/addresses.sql
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+    - name: Install system libraries
+      shell: bash
+      # libmariadb-dev is needed to build the Python package "mariadb".
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends libmariadb-dev
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v7
+      with:
+        python-version: ${{ inputs.python-version }}
+        enable-cache: true
+        cache-dependency-glob: backend/pyproject.toml
+
+    - name: Install Python dependencies
+      shell: bash
+      working-directory: backend
+      run: uv sync
+
+    - name: Start MariaDB
+      if: inputs.load-data == 'true'
+      shell: bash
+      # Same container as in the README: backend/compose.yaml.
+      run: docker compose -f backend/compose.yaml up -d
+
+    - name: Import the postal codes
+      if: inputs.load-data == 'true'
+      shell: bash
+      # Same steps as the README: copy the dump into the container and source it.
+      run: |
+        for i in $(seq 1 60); do
+          if docker exec test-data-mariadb mariadb -h127.0.0.1 -uroot -p"$DB_PASSWORD" -e "SELECT 1" > /dev/null 2>&1; then
+            break
+          fi
+          echo "Waiting for MariaDB ($i/60)..."
+          sleep 2
+        done
+        docker cp data/addresses.sql test-data-mariadb:/tmp/addresses.sql
+        docker exec -i test-data-mariadb mariadb -uroot -p"$DB_PASSWORD" addresses -e "source /tmp/addresses.sql"
+        ROWS=$(docker exec test-data-mariadb mariadb -uroot -p"$DB_PASSWORD" addresses -N -B -e "SELECT COUNT(*) FROM postal_code")
+        echo "postal_code rows: $ROWS"
+        test "$ROWS" -gt 0
