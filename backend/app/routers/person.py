@@ -4,17 +4,15 @@ from app.controllers.person_controller import (
     generate_person,
     generate_persons,
 )
+from app.models.person import Person, PersonList
 from app.models.person_responses import (
     Cpr,
     CprAndName,
     CprNameAndBirthDate,
+    MobilePhoneNumber,
     Name,
     NameAndBirthDate,
-    MobilePhoneNumber,
 )
-
-from app.models.person import Person, PersonList
-
 
 router = APIRouter()
 

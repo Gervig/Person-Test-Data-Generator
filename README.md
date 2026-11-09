@@ -428,6 +428,82 @@ If the database cannot be reached, the endpoints that use it respond with HTTP 5
 | Address floor | `st`, or a number from 1 to 99 |
 | Address door | `th`, `mf` or `tv`; or a number from 1 to 50; or a lowercase letter, an optional dash and one to three digits, for example `c3` or `d-14` |
 
+## Continuous integration and delivery (CI/CD)
+
+> **Status:** work in progress. The pipeline is not set up yet. The sections marked `TODO` will be filled in once the implementation is decided.
+
+### Goal
+
+Every change to the project should be checked automatically. The pipeline must run:
+
+| Stage | What it checks | Command (run from the repo root) |
+|---|---|---|
+| Static code analysis | Code quality, security issues and typing | `TODO: final tool list` |
+| Unit tests | Models, generators, services, routes | `cd backend && uv run pytest --ignore=tests/test_database` |
+| Integration tests | Repository against a real MariaDB | `cd backend && uv run pytest tests/test_database` |
+| API tests | The Postman collection against the running API | `postman collection run "postman/collections/Personal Test Data Generator API"` |
+| End-to-end tests | Playwright tests of the frontend | `cd frontend && npx playwright test` |
+
+The integration, API and end-to-end tests need the database and the API running first. See [Running the database](#running-the-database) and [Running the API](#running-the-api) for the setup steps.
+
+### CI tool
+
+- **Tool:** `TODO: Jenkins / GitHub Actions / other`
+- **Pipeline file:** `TODO: path, e.g. Jenkinsfile or .github/workflows/ci.yml`
+- **Where it runs:** `TODO: local machine / server / GitHub-hosted runner`
+- **Trigger:** `TODO: e.g. on every push and pull request to main, plus manual runs`
+
+### Pipeline stages
+
+`TODO: describe the final stages and their order, for example:`
+
+1. Check out the code
+2. Install dependencies (`uv sync`, `npm ci`)
+3. Start MariaDB and load `data/addresses.sql`
+4. Run static analysis
+5. Run unit tests, then integration tests, with coverage
+6. Start the API and run the Postman collection
+7. Start the frontend and run the Playwright tests
+8. Publish reports (coverage, Playwright report)
+
+### Secrets and configuration
+
+| Name | Purpose | Where it is stored |
+|---|---|---|
+| Database settings (`DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`) | Connect to the test MariaDB | `TODO` |
+| `POSTMAN_API_KEY` | Only needed if the collection is run from Postman's cloud | `TODO: CI credential store` |
+
+Secrets are never committed to the repository.
+
+### Reports and artifacts
+
+`TODO: describe where results can be found, for example the coverage report and the Playwright HTML report.`
+
+### Running the checks locally
+
+Until the pipeline exists, the same checks can be run by hand with the commands in the table above. For example, to run the backend tests with coverage:
+
+```powershell
+cd backend
+uv run pytest --cov=app --cov-branch --cov-report=term-missing
+```
+
+### Continuous delivery (CD)
+
+`TODO: decide whether the project needs a delivery step. The assignment only requires CI. Possible options:`
+
+- Build and publish a Docker image of the backend and frontend
+- Deploy to a hosting service
+- No CD, with the pipeline ending after the checks
+
+### Pipeline status
+
+`TODO: add a build status badge once the pipeline is running.`
+
+### Screenshots
+
+`TODO: add screenshots of a successful pipeline run and of the static analysis output for the assignment.`
+
 ## More documentation
 
 | Document | Content |

@@ -1,7 +1,8 @@
-from datetime import date, timedelta
 import random
 import string
+from datetime import date, timedelta
 from random import Random
+from typing import Literal, TypedDict
 
 from app.data_loader import load_person_names
 from app.models.person import ALLOWED_PHONE_PREFIXES
@@ -9,7 +10,13 @@ from app.models.person import ALLOWED_PHONE_PREFIXES
 # Pure random generators, no DB calls or DTO mapping.
 
 
-def random_name(rng: Random | None = None) -> dict[str, str]:
+class RandomName(TypedDict):
+    first_name: str
+    last_name: str
+    gender: Literal["male", "female"]
+
+
+def random_name(rng: Random | None = None) -> RandomName:
     generator = rng or random
     person = generator.choice(load_person_names())
     return {

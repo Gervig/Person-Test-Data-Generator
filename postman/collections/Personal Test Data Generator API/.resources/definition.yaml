@@ -1,6 +1,6 @@
 $kind: collection
 variables:
-  base_url: ""
+  base_url: "http://127.0.0.1:8000"
 scripts:
   - type: http:afterResponse
     code: "pm.test(\"Status code is 200\", () => {\r

@@ -38,7 +38,7 @@ class Person(BaseModel):
 
     @model_validator(mode="after")
     def _cpr_matches_date_of_birth(self) -> "Person":
-        
+
         date_of_birth = self.date_of_birth
         # extract day, month and year digits from date_of_birth
         # builds a string in format "ddmmyy"

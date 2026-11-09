@@ -4,7 +4,6 @@ from app.main import app
 from app.models.person import PersonList
 from app.routers import person
 
-
 client = TestClient(app)
 
 

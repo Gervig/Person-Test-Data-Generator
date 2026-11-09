@@ -1,9 +1,10 @@
-import pytest
 from datetime import date
 
-from app.models.postal_code import PostalCode
+import pytest
+
 from app.models.address import Address
 from app.models.person import Person
+from app.models.postal_code import PostalCode
 
 
 @pytest.fixture
@@ -12,11 +13,11 @@ def valid_postal_code():
         postal_code="2200",
         town="København N",
     )
-    
+
 @pytest.fixture
 def valid_postal_code_data(valid_postal_code):
     return valid_postal_code.model_dump()
-    
+
 @pytest.fixture
 def valid_address(valid_postal_code):
     return Address(
@@ -26,7 +27,7 @@ def valid_address(valid_postal_code):
         door="e48",
         postal_code=valid_postal_code,
     )
-    
+
 @pytest.fixture
 def valid_address_data(valid_address):
     return valid_address.model_dump()
