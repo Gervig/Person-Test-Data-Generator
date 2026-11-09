@@ -335,6 +335,9 @@ uv run pytest --cov=app --cov-branch --cov-report=term-missing
 
 For an HTML report in `backend/htmlcov` (open `htmlcov/index.html`), add `--cov-report=html`.
 
+### Screenshot of pytest cov html run on liveserver:
+![docs/pycov_html.png](docs/pycov_html.png)
+
 On Windows, the shortcuts in the repository root run the same commands from the project's virtual environment (run `uv sync` first): `test.cmd` runs the tests, `cov.cmd` shows the coverage in the terminal, and `covhtml.cmd` also writes and opens the HTML report.
 
 ### Frontend: end-to-end tests (Playwright)
