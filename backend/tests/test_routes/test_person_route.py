@@ -8,7 +8,6 @@ from app.routers import person
 
 client = TestClient(app)
 
-
 @pytest.fixture(autouse=True)
 def fake_generate_persons(monkeypatch, valid_person):
     monkeypatch.setattr(
